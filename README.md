@@ -22,7 +22,7 @@ A modular framework for fine-tuning Large Language Models (LLMs) across various 
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/llm-trainer.git
+git clone https://github.com/vmm/llm-trainer.git
 cd llm-trainer
 
 # Create a virtual environment
