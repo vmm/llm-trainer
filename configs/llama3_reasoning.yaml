@@ -1,0 +1,65 @@
+# Model configuration
+model:
+  base_model_id: "meta-llama/Meta-Llama-3-8B"
+  adapter_name_or_path: null  # Set to path for resuming training from checkpoint
+  load_in_4bit: true
+  trust_remote_code: true
+  use_flash_attention: true
+
+# Dataset configuration
+dataset:
+  dataset_name: "facebook/natural_reasoning"
+  train_split: "train"
+  validation_split: "validation"
+  text_column: "text"
+  max_seq_length: 2048
+  preprocessing:
+    template: "{question}\n\nAnswer: {answer}"
+
+# Training configuration
+training:
+  output_dir: "./output/llama3_reasoning"
+  num_train_epochs: 3
+  per_device_train_batch_size: 4
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 8
+  learning_rate: 2.0e-4
+  weight_decay: 0.01
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.03
+  optim: "paged_adamw_32bit"
+  fp16: true
+  bf16: false  # Set to true for A100 GPUs
+  evaluation_strategy: "steps"
+  eval_steps: 200
+  save_strategy: "steps"
+  save_steps: 200
+  save_total_limit: 3
+  logging_steps: 50
+  log_level: "info"
+  push_to_hub: false
+  hub_model_id: null
+  hub_token: null
+  report_to: "tensorboard"  # Can be ["tensorboard", "wandb"]
+  seed: 42
+  dataloader_num_workers: 4
+
+# LoRA configuration
+lora:
+  r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  bias: "none"
+  task_type: "CAUSAL_LM"
+  target_modules: ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+
+# Evaluation configuration
+evaluation:
+  eval_dataset: "logiqa"
+  metrics: ["accuracy", "f1"]
+  generate_kwargs:
+    max_new_tokens: 128
+    temperature: 0.7
+    do_sample: true
+    top_p: 0.9
+    repetition_penalty: 1.1
