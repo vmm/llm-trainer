@@ -6,6 +6,8 @@ from typing import Any, Dict, List, Optional, Union, Tuple
 
 import torch
 import numpy as np
+import datasets
+
 from datasets import Dataset, DatasetDict, load_dataset
 from tqdm import tqdm
 
