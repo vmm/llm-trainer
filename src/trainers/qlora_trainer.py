@@ -178,14 +178,41 @@ class QLoraTrainer(BaseTrainer):
         training_args = self.setup_training_arguments()
         
         # Create the trainer
-        self.trainer = Trainer(
-            model=self.model,
-            args=training_args,
-            train_dataset=self.dataset[get_config_value(self.config, "dataset.train_split", "train")],
-            eval_dataset=self.dataset[get_config_value(self.config, "dataset.validation_split", "validation")],
-            tokenizer=self.tokenizer,
-            data_collator=self.data_collator,
-        )
+        train_split = get_config_value(self.config, "dataset.train_split", "train")
+        eval_split = get_config_value(self.config, "dataset.validation_split", "validation")
+        
+        # Make sure splits exist, fallback to available splits if needed
+        available_splits = list(self.dataset.keys())
+        if train_split not in available_splits:
+            raise ValueError(f"Train split '{train_split}' not found in dataset. Available splits: {available_splits}")
+        
+        # For eval_split, try to find a suitable alternative if the specified one doesn't exist
+        if eval_split not in available_splits:
+            # Try common validation split names
+            for alternative in ["validation", "val", "valid", "dev", "test"]:
+                if alternative in available_splits:
+                    print(f"Validation split '{eval_split}' not found, using '{alternative}' instead.")
+                    eval_split = alternative
+                    break
+        
+        # Create trainer with appropriate splits
+        trainer_kwargs = {
+            "model": self.model,
+            "args": training_args,
+            "train_dataset": self.dataset[train_split],
+            "tokenizer": self.tokenizer,
+            "data_collator": self.data_collator,
+        }
+        
+        # Add eval dataset if available
+        if eval_split in available_splits:
+            trainer_kwargs["eval_dataset"] = self.dataset[eval_split]
+        else:
+            print(f"Warning: No validation split found in dataset. Training without evaluation.")
+            # Disable evaluation in training args
+            training_args.evaluation_strategy = "no"
+        
+        self.trainer = Trainer(**trainer_kwargs)
         
         return self.trainer
 
