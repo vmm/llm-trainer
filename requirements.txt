@@ -13,3 +13,13 @@ numpy>=1.24.0
 pandas>=2.0.0
 scikit-learn>=1.2.0
 tqdm>=4.66.0
+
+# Optional dependencies for ONNX export
+optimum>=1.12.0
+onnx>=1.14.0
+onnxruntime>=1.15.0
+
+# Optional dependencies for evaluation
+rouge_score>=0.1.2
+sacrebleu>=2.3.1
+nltk>=3.8.1

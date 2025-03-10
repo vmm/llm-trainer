@@ -157,7 +157,8 @@ class BaseTrainer(ABC):
             optim=optim,
             fp16=fp16,
             bf16=bf16,
-            evaluation_strategy=evaluation_strategy,
+            evaluation_strategy=evaluation_strategy,  # Deprecated but kept for compatibility
+            eval_strategy=evaluation_strategy,       # Newer parameter name
             eval_steps=eval_steps,
             save_strategy=save_strategy,
             save_steps=save_steps,

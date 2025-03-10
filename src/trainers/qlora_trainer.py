@@ -206,13 +206,18 @@ class QLoraTrainer(BaseTrainer):
             "data_collator": self.data_collator,
         }
         
-        # Add eval dataset if available
+        # Add eval dataset if available, otherwise modify training args
         if eval_split in available_splits:
             trainer_kwargs["eval_dataset"] = self.dataset[eval_split]
         else:
             print(f"Warning: No validation split found in dataset. Training without evaluation.")
             # Disable evaluation in training args
             training_args.evaluation_strategy = "no"
+            training_args.eval_strategy = "no"  # New argument in transformers 4.36+
+            # Also disable related settings
+            training_args.eval_steps = None
+            training_args.eval_delay = 0
+            training_args.per_device_eval_batch_size = 1  # Dummy value
         
         self.trainer = Trainer(**trainer_kwargs)
         

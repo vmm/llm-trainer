@@ -24,9 +24,17 @@ The framework follows a modular architecture with these key components:
 - `ReasoningEvaluator`: Specialized evaluator for reasoning tasks
 - Supports loading models, running inference, and calculating metrics
 
-### 4. Utilities
+### 4. Deployment & Usage
+
+- Interactive CLI for model interaction
+- Gradio web interface for user-friendly interaction
+- Model export tools for production deployment (ONNX, merged models)
+- Adapter management utilities
+
+### 5. Utilities
 
 - Configuration management with YAML files
+- Google Drive integration for Colab persistence
 - Standardized CLI for all components
 - Helper scripts for using fine-tuned models
 
@@ -40,17 +48,35 @@ The initial implementation focuses on:
 - **Technique**: QLoRA with 4-bit quantization
 - **Sequence length**: 2048 tokens
 
+## Key Features
+
+- Modular and extensible architecture
+- Parameter-efficient fine-tuning with QLoRA
+- Google Colab compatibility with Drive integration
+- Multiple deployment options for fine-tuned models
+- Interactive web interface with Gradio
+- ONNX export for production deployment
+- Adapter merging with base model
+- Robust error handling and fallbacks
+
 ## Usage Flow
 
-1. **Process Dataset**: `python main.py process --config configs/llama3_reasoning.yaml`
-2. **Fine-tune Model**: `python main.py train configs/llama3_reasoning.yaml`
-3. **Evaluate Model**: `python main.py evaluate --model_path ./output/llama3_reasoning`
-4. **Use Model**: `python main.py use --adapter_path ./output/llama3_reasoning --interactive`
+### Training Pipeline
+1. **Process Dataset**: `python -m src.data_processors.reasoning_processor`
+2. **Fine-tune Model**: `python -m src.trainers.qlora_trainer configs/llama3_reasoning.yaml`
+3. **Evaluate Model**: `python -m src.evaluators.reasoning_evaluator --model_path ./output/llama3_reasoning`
+
+### Using Fine-tuned Models
+- **Interactive CLI**: `python -m scripts.use_finetuned_model --adapter_path ./output/llama3_reasoning --interactive`
+- **Web Interface**: `python -m scripts.use_finetuned_model --adapter_path ./output/llama3_reasoning --gradio`
+- **Merge Adapter**: `python -m scripts.use_finetuned_model --adapter_path ./output/llama3_reasoning --merge_adapter --output_dir merged_model`
+- **Export to ONNX**: `python -m scripts.export_model_onnx --model_path merged_model --output_dir onnx_model --quantize`
 
 ## Google Colab Integration
 
-A Jupyter notebook is included for running the training process on Google Colab with GPU acceleration:
-- `notebooks/llama3_reasoning_finetuning.ipynb`
+Two Jupyter notebooks are included for running the training process on Google Colab with GPU acceleration:
+- `notebooks/llama3_reasoning_finetuning.ipynb` - Basic training notebook
+- `notebooks/llama3_reasoning_finetuning_drive.ipynb` - Enhanced notebook with Google Drive integration for persistently storing models, datasets, and evaluations
 
 ## Extension Points
 
@@ -60,10 +86,18 @@ The framework is designed for easy extension:
 2. **New Training Methods**: Implement alternatives to QLoRA by subclassing `BaseTrainer`
 3. **New Evaluation Methods**: Add specialized evaluators by subclassing `BaseEvaluator`
 4. **New Models**: Update configuration files to support different base models
+5. **New Interfaces**: Add visualization or interaction interfaces that leverage the trained models
 
-## Next Steps
+## Recent Enhancements
 
-1. Extend to additional domains (SQL, code, domain-specific knowledge)
-2. Add support for more advanced fine-tuning techniques
-3. Integrate with model serving frameworks
-4. Add monitoring and visualization tools
+- Added Gradio web interface for easy interaction with models
+- Implemented LoRA adapter merging for deployment efficiency
+- Added ONNX export for optimized inference in production
+- Improved Google Drive integration for Colab persistence
+- Fixed issues with Flash Attention compatibility
+- Added fallback mechanisms for dataset splits
+- Enhanced error handling throughout the pipeline
+
+## Roadmap
+
+For a detailed development roadmap including planned features and enhancements, please see the [ROADMAP.md](ROADMAP.md) file.
