@@ -143,6 +143,28 @@ class BaseTrainer(ABC):
         seed = get_config_value(self.training_config, "seed", 42)
         dataloader_num_workers = get_config_value(self.training_config, "dataloader_num_workers", 4)
         
+        # Check if we should adjust worker count for memory-constrained environments
+        adjusted_workers = dataloader_num_workers
+        if dataloader_num_workers > 1:
+            try:
+                import psutil
+                # Check if we're in a memory-constrained environment
+                total_memory = psutil.virtual_memory().total / (1024**3)  # in GB
+                if total_memory < 16:  # Less than 16GB RAM
+                    # Use fewer workers for memory-constrained environments
+                    adjusted_workers = 1
+                    print(f"Memory-constrained environment detected ({total_memory:.1f}GB RAM). "
+                          f"Reducing dataloader workers from {dataloader_num_workers} to {adjusted_workers}.")
+            except:
+                # If we can't check memory, default to safe setting
+                adjusted_workers = 1
+                print(f"Unable to check system memory. Reducing dataloader workers to {adjusted_workers} for stability.")
+        
+        # Additional memory-saving settings
+        gradient_checkpointing = get_config_value(self.training_config, "gradient_checkpointing", True)
+        group_by_length = get_config_value(self.training_config, "group_by_length", False)
+        torch_compile = get_config_value(self.training_config, "torch_compile", False)
+        
         # Create training arguments
         training_args = TrainingArguments(
             output_dir=output_dir,
@@ -170,7 +192,11 @@ class BaseTrainer(ABC):
             hub_token=hub_token,
             report_to=report_to,
             seed=seed,
-            dataloader_num_workers=dataloader_num_workers,
+            dataloader_num_workers=adjusted_workers,
+            # Memory-saving settings
+            gradient_checkpointing=gradient_checkpointing,
+            group_by_length=group_by_length,
+            torch_compile=torch_compile,
         )
         
         return training_args
