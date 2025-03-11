@@ -1,0 +1,65 @@
+# Model configuration
+model:
+  base_model_id: "google/gemma-2b-it"
+  adapter_name_or_path: null  # Set to path for resuming training from checkpoint
+  load_in_4bit: true
+  trust_remote_code: true
+  use_flash_attention: false  # Disable for better compatibility
+
+# Dataset configuration
+dataset:
+  dataset_name: "roneneldan/TinyStories"
+  train_split: "train"
+  validation_split: "validation"
+  text_column: "text"
+  max_seq_length: 512  # Reduced for faster training
+  preprocessing:
+    template: "{text}"
+    sample_size: 10000  # Use only 10K examples for quick training
+
+# Training configuration
+training:
+  output_dir: "./output/gemma_tinystories"
+  num_train_epochs: 1
+  per_device_train_batch_size: 2
+  per_device_eval_batch_size: 2
+  gradient_accumulation_steps: 8
+  learning_rate: 2.0e-4
+  weight_decay: 0.01
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.03
+  optim: "paged_adamw_32bit"
+  fp16: true
+  bf16: false
+  evaluation_strategy: "steps"
+  eval_steps: 100
+  save_strategy: "steps"
+  save_steps: 100
+  save_total_limit: 3
+  logging_steps: 20
+  log_level: "info"
+  push_to_hub: false
+  hub_model_id: null
+  hub_token: null
+  report_to: "tensorboard"
+  seed: 42
+  dataloader_num_workers: 1
+  torch_compile: false
+
+# LoRA configuration
+lora:
+  r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  bias: "none"
+  task_type: "CAUSAL_LM"
+  target_modules: ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+
+# Evaluation configuration
+evaluation:
+  metrics: ["perplexity"]
+  generate_kwargs:
+    max_new_tokens: 64
+    temperature: 0.7
+    do_sample: true
+    top_p: 0.9
