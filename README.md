@@ -35,6 +35,33 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Install development dependencies (for testing)
+pip install -r requirements-dev.txt
+```
+
+## Testing
+
+This project includes comprehensive test coverage for configuration utilities and project structure.
+
+```bash
+# Run all tests
+python -m pytest
+
+# Run tests with coverage report
+python -m pytest --cov=src
+
+# Run only unit tests
+python -m pytest -m unit
+
+# Run only integration tests
+python -m pytest -m integration
+
+# Run specific test file
+python -m pytest tests/test_config.py
+
+# Run tests with verbose output
+python -m pytest -v
 ```
 
 ## Usage
