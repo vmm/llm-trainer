@@ -16,6 +16,7 @@ from transformers import (
 )
 
 from src.utils.config import get_config_value
+from src.utils.auth import setup_huggingface_auth, get_auth_token, requires_authentication
 
 
 class BaseTrainer(ABC):
@@ -36,6 +37,11 @@ class BaseTrainer(ABC):
         self.config = config
         self.model_config = get_config_value(config, "model", {})
         self.training_config = get_config_value(config, "training", {})
+        
+        # Setup HuggingFace authentication
+        hf_token = get_config_value(self.model_config, "hf_token", None)
+        use_auth_token = get_config_value(self.model_config, "use_auth_token", True)
+        self.auth_successful = setup_huggingface_auth(hf_token, use_auth_token)
         
         # Set up device
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -69,9 +75,28 @@ class BaseTrainer(ABC):
         if model_id is None:
             raise ValueError("Model ID must be specified in the configuration.")
         
+        # Check if model requires authentication
+        if requires_authentication(model_id) and not self.auth_successful:
+            print(f"Warning: Model {model_id} may require authentication. "
+                  f"Consider setting HF_TOKEN environment variable or adding hf_token to config.")
+        
+        # Prepare tokenizer arguments
+        tokenizer_kwargs = {
+            "trust_remote_code": get_config_value(self.model_config, "trust_remote_code", True),
+        }
+        
+        # Add token if authentication was successful
+        hf_token = get_config_value(self.model_config, "hf_token", None)
+        if self.auth_successful and hf_token:
+            tokenizer_kwargs["token"] = hf_token
+        elif self.auth_successful:
+            auth_token = get_auth_token()
+            if auth_token:
+                tokenizer_kwargs["token"] = auth_token
+        
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_id,
-            trust_remote_code=get_config_value(self.model_config, "trust_remote_code", True),
+            **tokenizer_kwargs
         )
         
         # Set padding token if not set

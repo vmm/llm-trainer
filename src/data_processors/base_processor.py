@@ -9,6 +9,7 @@ from datasets import Dataset, DatasetDict
 from transformers import PreTrainedTokenizer, AutoTokenizer
 
 from src.utils.config import get_config_value
+from src.utils.auth import setup_huggingface_auth, get_auth_token, requires_authentication
 
 
 class BaseDataProcessor(ABC):
@@ -30,15 +31,39 @@ class BaseDataProcessor(ABC):
         self.dataset_config = get_config_value(config, "dataset", {})
         self.model_config = get_config_value(config, "model", {})
         
+        # Setup HuggingFace authentication
+        hf_token = get_config_value(self.model_config, "hf_token", None)
+        use_auth_token = get_config_value(self.model_config, "use_auth_token", True)
+        self.auth_successful = setup_huggingface_auth(hf_token, use_auth_token)
+        
         # Initialize tokenizer
         tokenizer_id = get_config_value(
             self.model_config, 
             "base_model_id", 
             "meta-llama/Meta-Llama-3-8B"
         )
+        
+        # Check if model requires authentication
+        if requires_authentication(tokenizer_id) and not self.auth_successful:
+            print(f"Warning: Model {tokenizer_id} may require authentication. "
+                  f"Consider setting HF_TOKEN environment variable or adding hf_token to config.")
+        
+        # Load tokenizer with authentication
+        tokenizer_kwargs = {
+            "trust_remote_code": get_config_value(self.model_config, "trust_remote_code", True),
+        }
+        
+        # Add token if authentication was successful
+        if self.auth_successful and hf_token:
+            tokenizer_kwargs["token"] = hf_token
+        elif self.auth_successful:
+            auth_token = get_auth_token()
+            if auth_token:
+                tokenizer_kwargs["token"] = auth_token
+        
         self.tokenizer = AutoTokenizer.from_pretrained(
             tokenizer_id,
-            trust_remote_code=get_config_value(self.model_config, "trust_remote_code", True),
+            **tokenizer_kwargs
         )
         
         # Set padding token if not set

@@ -78,3 +78,9 @@ wandb/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Authentication tokens and sensitive files
+.hf_token
+*token*.txt
+secrets.yaml
+.env
