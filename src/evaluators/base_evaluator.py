@@ -13,6 +13,7 @@ from datasets import Dataset, DatasetDict, load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
 from src.utils.config import get_config_value
+from src.utils.auth import setup_huggingface_auth, get_auth_token, requires_authentication
 
 
 class BaseEvaluator(ABC):
@@ -33,6 +34,11 @@ class BaseEvaluator(ABC):
         self.config = config
         self.model_config = get_config_value(config, "model", {})
         self.evaluation_config = get_config_value(config, "evaluation", {})
+        
+        # Setup HuggingFace authentication
+        hf_token = get_config_value(self.model_config, "hf_token", None)
+        use_auth_token = get_config_value(self.model_config, "use_auth_token", True)
+        self.auth_successful = setup_huggingface_auth(hf_token, use_auth_token)
         
         # Set up device
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

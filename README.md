@@ -37,6 +37,17 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+### HuggingFace Authentication (Optional but Recommended)
+
+For accessing gated models like Llama 3, set up authentication:
+
+```bash
+# Set your HuggingFace token
+export HF_TOKEN=your_huggingface_token_here
+```
+
+For detailed authentication setup, see [docs/authentication.md](docs/authentication.md).
+
 ## Usage
 
 ### Data Preparation

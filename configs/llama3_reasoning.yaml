@@ -5,6 +5,9 @@ model:
   load_in_4bit: true
   trust_remote_code: true
   use_flash_attention: true
+  # HuggingFace authentication settings
+  use_auth_token: true  # Whether to use HF authentication token
+  hf_token: null  # HuggingFace token (optional, will use HF_TOKEN env var if not set)
 
 # Dataset configuration
 dataset:

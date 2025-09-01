@@ -23,6 +23,7 @@ from peft import (
 
 from src.trainers.base_trainer import BaseTrainer
 from src.utils.config import get_config_value, load_config
+from src.utils.auth import get_auth_token, requires_authentication
 
 
 class QLoraTrainer(BaseTrainer):
@@ -97,6 +98,11 @@ class QLoraTrainer(BaseTrainer):
         load_in_4bit = get_config_value(self.model_config, "load_in_4bit", True)
         use_flash_attention = get_config_value(self.model_config, "use_flash_attention", True)
         
+        # Check if model requires authentication
+        if requires_authentication(model_id) and not self.auth_successful:
+            print(f"Warning: Model {model_id} may require authentication. "
+                  f"Consider setting HF_TOKEN environment variable or adding hf_token to config.")
+        
         # Configure quantization
         quantization_config = BitsAndBytesConfig(
             load_in_4bit=load_in_4bit,
@@ -105,13 +111,27 @@ class QLoraTrainer(BaseTrainer):
             bnb_4bit_quant_type="nf4",
         )
         
+        # Prepare model loading arguments
+        model_kwargs = {
+            "quantization_config": quantization_config,
+            "trust_remote_code": get_config_value(self.model_config, "trust_remote_code", True),
+            "device_map": "auto",
+            "attn_implementation": "flash_attention_2" if use_flash_attention else "eager",
+        }
+        
+        # Add token if authentication was successful
+        hf_token = get_config_value(self.model_config, "hf_token", None)
+        if self.auth_successful and hf_token:
+            model_kwargs["token"] = hf_token
+        elif self.auth_successful:
+            auth_token = get_auth_token()
+            if auth_token:
+                model_kwargs["token"] = auth_token
+        
         # Load model with quantization config
         self.model = AutoModelForCausalLM.from_pretrained(
             model_id,
-            quantization_config=quantization_config,
-            trust_remote_code=get_config_value(self.model_config, "trust_remote_code", True),
-            device_map="auto",
-            attn_implementation="flash_attention_2" if use_flash_attention else "eager",
+            **model_kwargs
         )
         
         return self.model

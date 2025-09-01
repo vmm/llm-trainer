@@ -15,6 +15,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from peft import PeftModel, PeftConfig
 
 from src.utils.config import load_config
+from src.utils.auth import setup_huggingface_auth, get_auth_token, requires_authentication
 
 
 def parse_args():
@@ -101,6 +102,9 @@ def load_model_and_tokenizer(
 ) -> tuple:
     """Load the model and tokenizer."""
     
+    # Setup HuggingFace authentication
+    auth_successful = setup_huggingface_auth()
+    
     # Load adapter config
     config = PeftConfig.from_pretrained(adapter_path)
     
@@ -109,31 +113,54 @@ def load_model_and_tokenizer(
     
     print(f"Loading base model: {base_model_id}")
     
+    # Check if model requires authentication
+    if requires_authentication(base_model_id) and not auth_successful:
+        print(f"Warning: Model {base_model_id} may require authentication. "
+              f"Consider setting HF_TOKEN environment variable.")
+    
+    # Prepare model loading arguments
+    model_kwargs = {
+        "trust_remote_code": True
+    }
+    
+    # Add token if authentication was successful
+    auth_token = get_auth_token()
+    if auth_successful and auth_token:
+        model_kwargs["token"] = auth_token
+    
     # Load model with appropriate settings
     device_map = "cpu" if use_cpu else "auto"
+    model_kwargs["device_map"] = device_map
     
     if quantize and not use_cpu:
         # Load in 8-bit precision for efficiency
+        model_kwargs["load_in_8bit"] = True
         base_model = AutoModelForCausalLM.from_pretrained(
             base_model_id,
-            load_in_8bit=True,
-            device_map=device_map,
-            trust_remote_code=True
+            **model_kwargs
         )
     else:
         # Load in full precision or on CPU
         base_model = AutoModelForCausalLM.from_pretrained(
             base_model_id,
-            device_map=device_map,
-            trust_remote_code=True
+            **model_kwargs
         )
     
     # Load LoRA adapter
     print(f"Loading adapter from: {adapter_path}")
     model = PeftModel.from_pretrained(base_model, adapter_path, is_trainable=False)
     
+    # Prepare tokenizer loading arguments
+    tokenizer_kwargs = {
+        "trust_remote_code": True
+    }
+    
+    # Add token if authentication was successful
+    if auth_successful and auth_token:
+        tokenizer_kwargs["token"] = auth_token
+    
     # Load tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(base_model_id, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(base_model_id, **tokenizer_kwargs)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     
@@ -397,6 +424,9 @@ def merge_adapter_with_base_model(
         print("Error: Required libraries not installed.")
         return
     
+    # Setup HuggingFace authentication
+    auth_successful = setup_huggingface_auth()
+    
     print(f"Loading adapter config from {adapter_path}")
     config = PeftConfig.from_pretrained(adapter_path)
     
@@ -404,20 +434,44 @@ def merge_adapter_with_base_model(
     base_model_id = base_model or config.base_model_name_or_path
     print(f"Using base model: {base_model_id}")
     
+    # Check if model requires authentication
+    if requires_authentication(base_model_id) and not auth_successful:
+        print(f"Warning: Model {base_model_id} may require authentication. "
+              f"Consider setting HF_TOKEN environment variable.")
+    
+    # Prepare model loading arguments
+    model_kwargs = {
+        "torch_dtype": torch.float16,
+        "device_map": device,
+        "trust_remote_code": True
+    }
+    
+    # Add token if authentication was successful
+    auth_token = get_auth_token()
+    if auth_successful and auth_token:
+        model_kwargs["token"] = auth_token
+    
     # Load base model (using fp16 to reduce memory footprint)
     print("Loading base model...")
     model = AutoModelForCausalLM.from_pretrained(
         base_model_id,
-        torch_dtype=torch.float16,
-        device_map=device,
-        trust_remote_code=True
+        **model_kwargs
     )
+    
+    # Prepare tokenizer loading arguments
+    tokenizer_kwargs = {
+        "trust_remote_code": True
+    }
+    
+    # Add token if authentication was successful
+    if auth_successful and auth_token:
+        tokenizer_kwargs["token"] = auth_token
     
     # Load tokenizer
     print("Loading tokenizer...")
     tokenizer = AutoTokenizer.from_pretrained(
         base_model_id,
-        trust_remote_code=True
+        **tokenizer_kwargs
     )
     
     # Load adapter
