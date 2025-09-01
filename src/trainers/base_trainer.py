@@ -148,17 +148,27 @@ class BaseTrainer(ABC):
         if dataloader_num_workers > 1:
             try:
                 import psutil
-                # Check if we're in a memory-constrained environment
-                total_memory = psutil.virtual_memory().total / (1024**3)  # in GB
-                if total_memory < 16:  # Less than 16GB RAM
-                    # Use fewer workers for memory-constrained environments
+                # Check if psutil has the required function before using it
+                if hasattr(psutil, 'virtual_memory'):
+                    # Check if we're in a memory-constrained environment
+                    total_memory = psutil.virtual_memory().total / (1024**3)  # in GB
+                    if total_memory < 16:  # Less than 16GB RAM
+                        # Use fewer workers for memory-constrained environments
+                        adjusted_workers = 1
+                        print(f"Memory-constrained environment detected ({total_memory:.1f}GB RAM). "
+                              f"Reducing dataloader workers from {dataloader_num_workers} to {adjusted_workers}.")
+                else:
+                    # psutil doesn't have virtual_memory function
                     adjusted_workers = 1
-                    print(f"Memory-constrained environment detected ({total_memory:.1f}GB RAM). "
-                          f"Reducing dataloader workers from {dataloader_num_workers} to {adjusted_workers}.")
-            except:
-                # If we can't check memory, default to safe setting
+                    print(f"psutil.virtual_memory() not available. Reducing dataloader workers to {adjusted_workers} for stability.")
+            except (ImportError, AttributeError) as e:
+                # If we can't import psutil or access virtual_memory, default to safe setting
                 adjusted_workers = 1
-                print(f"Unable to check system memory. Reducing dataloader workers to {adjusted_workers} for stability.")
+                print(f"Unable to check system memory (psutil unavailable: {e}). Reducing dataloader workers to {adjusted_workers} for stability.")
+            except Exception as e:
+                # Catch any other unexpected errors
+                adjusted_workers = 1
+                print(f"Unable to check system memory (unexpected error: {e}). Reducing dataloader workers to {adjusted_workers} for stability.")
         
         # Additional memory-saving settings
         gradient_checkpointing = get_config_value(self.training_config, "gradient_checkpointing", True)
