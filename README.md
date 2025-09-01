@@ -39,6 +39,40 @@ pip install -r requirements.txt
 
 ## Usage
 
+### Testing
+
+The project includes a comprehensive test suite to ensure code quality and reliability.
+
+#### Running Tests
+
+```bash
+# Run all tests
+python -m pytest
+
+# Run specific test types
+python scripts/run_tests.py unit           # Unit tests only
+python scripts/run_tests.py integration    # Integration tests only
+python scripts/run_tests.py all           # All tests
+
+# Run with coverage reporting
+python scripts/run_tests.py --coverage
+
+# Run tests verbosely
+python scripts/run_tests.py --verbose
+```
+
+#### Test Structure
+
+The test suite covers:
+
+- ✅ **Configuration utilities** - Loading, saving, and manipulating YAML configs
+- ✅ **Data processor base classes** - Initialization, tokenization, dataset handling
+- ✅ **Trainer base classes** - Training argument setup, memory optimization
+- ✅ **Basic integration tests** - Component interaction workflows
+- 🚧 **Evaluator components** - Model evaluation and metrics (partial coverage)
+
+The tests are designed to run without requiring GPU access or large model downloads, making them suitable for CI/CD environments.
+
 ### Data Preparation
 
 ```bash

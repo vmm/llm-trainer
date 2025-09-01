@@ -4,6 +4,36 @@ This directory contains utility scripts for the LLM Trainer project.
 
 ## Available Scripts
 
+### `run_tests.py`
+
+Script to run the project's test suite with various options.
+
+#### Usage
+
+```bash
+# Run all tests
+python scripts/run_tests.py
+
+# Run specific test types
+python scripts/run_tests.py unit
+python scripts/run_tests.py integration
+
+# Run with verbose output
+python scripts/run_tests.py --verbose
+
+# Run with coverage reporting
+python scripts/run_tests.py --coverage
+
+# Combine options
+python scripts/run_tests.py unit --verbose --coverage
+```
+
+#### Arguments
+
+- Test type: `unit`, `integration`, or `all` (default: `all`)
+- `--verbose` / `-v`: Run tests with verbose output
+- `--coverage` / `-c`: Include test coverage reporting
+
 ### `use_finetuned_model.py`
 
 Script to use a fine-tuned model with LoRA adapters locally.
