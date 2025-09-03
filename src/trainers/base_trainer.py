@@ -148,6 +148,10 @@ class BaseTrainer(ABC):
         if dataloader_num_workers > 1:
             try:
                 import psutil
+                # Verify psutil has the required virtual_memory function
+                if not hasattr(psutil, 'virtual_memory'):
+                    raise AttributeError("psutil module does not have 'virtual_memory' attribute")
+                
                 # Check if we're in a memory-constrained environment
                 total_memory = psutil.virtual_memory().total / (1024**3)  # in GB
                 if total_memory < 16:  # Less than 16GB RAM
@@ -155,10 +159,21 @@ class BaseTrainer(ABC):
                     adjusted_workers = 1
                     print(f"Memory-constrained environment detected ({total_memory:.1f}GB RAM). "
                           f"Reducing dataloader workers from {dataloader_num_workers} to {adjusted_workers}.")
-            except:
-                # If we can't check memory, default to safe setting
+            except ImportError:
+                # psutil is not installed
                 adjusted_workers = 1
-                print(f"Unable to check system memory. Reducing dataloader workers to {adjusted_workers} for stability.")
+                print(f"psutil not installed. Install with 'pip install psutil>=5.9.0' for memory optimization. "
+                      f"Reducing dataloader workers to {adjusted_workers} for stability.")
+            except AttributeError as e:
+                # psutil is installed but missing virtual_memory attribute (possibly wrong package or version)
+                adjusted_workers = 1
+                print(f"psutil import issue ({e}). Please reinstall with 'pip install --force-reinstall psutil>=5.9.0'. "
+                      f"Reducing dataloader workers to {adjusted_workers} for stability.")
+            except Exception as e:
+                # Any other error (permissions, system issues, etc.)
+                adjusted_workers = 1
+                print(f"Unable to check system memory ({type(e).__name__}: {e}). "
+                      f"Reducing dataloader workers to {adjusted_workers} for stability.")
         
         # Additional memory-saving settings
         gradient_checkpointing = get_config_value(self.training_config, "gradient_checkpointing", True)
