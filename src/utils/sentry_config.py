@@ -17,6 +17,9 @@ def disable_sentry() -> None:
     This function should be called early in the application lifecycle to prevent
     Sentry from attempting to send error data when not properly configured.
     """
+    # Set environment variable first to ensure WandB doesn't try to use Sentry
+    os.environ["WANDB_DISABLE_SENTRY"] = "true"
+    
     try:
         import sentry_sdk
         
@@ -29,9 +32,6 @@ def disable_sentry() -> None:
             debug=False,  # Disable debug mode
             environment="disabled",  # Mark environment as disabled
         )
-        
-        # Set environment variable to ensure WandB doesn't try to use Sentry
-        os.environ["WANDB_DISABLE_SENTRY"] = "true"
         
         logging.debug("Sentry SDK has been disabled to prevent error reporting")
         
