@@ -437,6 +437,10 @@ def merge_adapter_with_base_model(
 
 
 if __name__ == "__main__":
+    # Disable Sentry early to prevent errors
+    from src.utils.sentry_config import disable_sentry
+    disable_sentry()
+    
     args = parse_args()
     
     # Handle --merge_adapter mode

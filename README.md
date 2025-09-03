@@ -119,6 +119,16 @@ llm-trainer/
 └── requirements.txt          # Project dependencies
 ```
 
+## Error Reporting and Monitoring
+
+The framework includes built-in error handling to prevent common issues:
+
+### Sentry Integration
+- **Issue**: WandB dependency includes Sentry SDK which can cause "No valid Sentry data received" errors
+- **Solution**: The framework automatically disables Sentry SDK to prevent these errors
+- **Configuration**: Sentry is disabled by default in all entry points (`main.py`, training scripts, etc.)
+- **Custom Configuration**: If you want to enable Sentry with your own DSN, use `configure_sentry(dsn="your-dsn")` instead of `disable_sentry()`
+
 ## License
 
 MIT
