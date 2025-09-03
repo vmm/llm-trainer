@@ -114,6 +114,10 @@ if __name__ == "__main__":
     import argparse
     from src.utils.config import load_config
     
+    # Disable Sentry early to prevent errors
+    from src.utils.sentry_config import disable_sentry
+    disable_sentry()
+    
     parser = argparse.ArgumentParser(description="Process a reasoning dataset for LLM fine-tuning")
     parser.add_argument(
         "--config", 

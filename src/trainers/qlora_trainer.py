@@ -228,6 +228,10 @@ if __name__ == "__main__":
     """Run the trainer as a standalone script."""
     import argparse
     
+    # Disable Sentry early to prevent errors
+    from src.utils.sentry_config import disable_sentry
+    disable_sentry()
+    
     parser = argparse.ArgumentParser(description="Fine-tune an LLM using QLoRA")
     parser.add_argument(
         "config_path", 

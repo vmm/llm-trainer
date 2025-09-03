@@ -11,6 +11,10 @@ import sys
 import argparse
 from typing import List, Optional, Dict, Any
 
+# Disable Sentry early to prevent "No valid Sentry data received" errors
+from src.utils.sentry_config import disable_sentry
+disable_sentry()
+
 from src.utils.config import load_config
 from src.data_processors import ReasoningDataProcessor
 from src.trainers import QLoraTrainer
